@@ -1,0 +1,151 @@
+/* =====================================================================
+   Giao diện theo bộ asset "phố Việt retro halftone" (assets/Bộ giao diện game phố Việt retro halftone.png)
+   giấy vàng chấm halftone · nút xanh navy viền kem · bảng đỏ nâu chữ kem
+   Nạp sau style.css nên ghi đè các màu và kiểu nút gốc.
+   ===================================================================== */
+:root {
+  --navy: #1f3f93; --navy-d: #11265f; --cream: #fbefcf; --mustard: #f1cd78; --mustard-d: #d9a84a;
+  --plaque: #7a1d12; --plaque-d: #4a0e08; --red: #c8261f; --red-d: #8a1a14;
+  --halftone: radial-gradient(rgba(120, 60, 10, .14) 1.1px, transparent 1.5px);
+  --cond: 'Barlow Condensed', Itim, system-ui, sans-serif;
+}
+.btn, h2, .chip, .hud-name, .score, .timer-txt, .npc-name, .w-name, .frag .kind, .stats b, .big-score, .combo, .banner, .pop.big { font-family: var(--cond); font-weight: 800; letter-spacing: .3px; }
+#app { background: var(--mustard); background-image: var(--halftone); background-size: 6px 6px; }
+#app.is-dim { background-color: #e9c77a; }
+#app.is-dawn { background: linear-gradient(#f7e3b0, var(--mustard)); }
+#app.is-dark { background: var(--night); background-image: radial-gradient(rgba(255, 220, 160, .05) 1.1px, transparent 1.5px); background-size: 6px 6px; }
+h2 { color: var(--red); text-transform: uppercase; text-shadow: 2px 2px 0 var(--cream); font-size: 28px; }
+.is-dark h2 { color: var(--mustard); text-shadow: none; }
+
+/* ---------- nút ---------- */
+.btn { background: var(--navy); color: var(--cream); border: 3px solid var(--cream); outline: 3px solid var(--navy-d); outline-offset: -1px;
+  box-shadow: 0 5px 0 var(--navy-d), 0 8px 14px rgba(40, 20, 0, .25); border-radius: 12px; text-transform: uppercase; font-size: 21px; }
+.btn:active { box-shadow: 0 1px 0 var(--navy-d); }
+.btn.big { font-size: 26px; }
+.btn.gold { background: linear-gradient(#ffe38a, #f2b632); color: var(--plaque); border-color: #fff4c8; outline-color: var(--gold-d); box-shadow: 0 5px 0 var(--gold-d); }
+.btn.ghost { background: var(--cream); color: var(--red); border: 3px solid var(--red); outline: none; box-shadow: 0 4px 0 var(--red-d); }
+.btn.dark { background: #2c1a16; color: var(--cream); border-color: #6a4a3a; outline-color: #120806; }
+.img-btn { display: block; padding: 0; width: 100%; max-width: 340px; margin: 0 auto; transition: transform .08s; }
+.img-btn img { width: 100%; display: block; filter: drop-shadow(0 6px 6px rgba(60, 20, 0, .3)); }
+.img-btn:active { transform: translateY(3px) scale(.98); }
+.img-btn.skip { position: absolute; top: max(10px, env(safe-area-inset-top)); right: 12px; width: 108px; z-index: 9; }
+.icon-btn { background: var(--cream); border: 3px solid var(--navy); color: var(--navy); }
+.chip { background: var(--cream); border-color: var(--navy); color: var(--navy); font-size: 15px; }
+.chip.gold { background: var(--plaque); border-color: var(--plaque-d); color: var(--cream); }
+.card, .frag, .stats div { background: var(--cream); border-color: var(--red); }
+.card { box-shadow: 0 4px 0 var(--red-d); }
+.frag { border: 2px solid var(--red); border-left-width: 7px; }
+.frag .kind { color: var(--navy); }
+.frag.new { background: #fff6d8; border-color: var(--navy); }
+.frag.dark { background: #2c1a16; }
+
+/* ---------- trang đầu ---------- */
+.title-screen { background: transparent; align-items: center; }
+.logo { display: flex; flex-direction: column; align-items: center; }
+.logo-sm { background: var(--navy); border: 2px solid var(--cream); }
+.logo-img { width: min(78%, 330px); margin: 4px 0 2px; filter: drop-shadow(0 6px 4px rgba(90, 30, 0, .35)); animation: bob 3s ease-in-out infinite; }
+.tag { font-size: 18px; color: var(--plaque); }
+.hero { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; width: 100%; }
+.hero-img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 10px 10px rgba(60, 20, 0, .3)); }
+.title-screen .img-btn { flex: none; }
+.note { color: var(--plaque); }
+
+/* ---------- hẻm ---------- */
+.hub-bottom { background: var(--mustard); background-image: var(--halftone); background-size: 6px 6px; border-top: 4px solid var(--navy); position: relative; }
+.hint { color: var(--plaque); font-size: 18px; }
+.finger-svg { pointer-events: none; animation: tapme 1s ease-in-out infinite; }
+@keyframes tapme { 50% { transform: translateY(-14px); } }
+
+/* ---------- cảnh 01: bà bán trái cây ---------- */
+.npc-stage { position: relative; flex: none; height: 34vh; min-height: 220px; margin: -12px -16px 0; overflow: hidden; background: #f6d98a; border-bottom: 4px solid var(--navy); }
+.npc-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .5; filter: saturate(.8); }
+.npc-sign { position: absolute; left: 12px; top: 12px; width: 84px; }
+.npc-img { position: absolute; right: 6%; bottom: -4px; height: 96%; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, .25)); animation: rise .6s ease-out; }
+.npc-box { position: relative; background: var(--cream); border: 3px solid var(--navy); border-radius: 12px; padding: 18px 14px 12px; margin-top: 18px; box-shadow: 0 4px 0 var(--navy-d); }
+.npc-name { position: absolute; top: -15px; left: 12px; background: var(--navy); color: var(--cream); padding: 2px 12px; border-radius: 6px; font-size: 16px; text-transform: uppercase; }
+.npc-box p { margin: 0; font-size: 18px; line-height: 1.45; }
+.npc-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.npc-choice { background: var(--navy); color: var(--cream); border: 2px solid var(--cream); outline: 2px solid var(--navy-d); border-radius: 10px; padding: 8px 6px; font-size: 15px; line-height: 1.25; }
+.npc-box .npc-you { margin: 8px 0 0; color: var(--navy); font-style: italic; font-size: 16px; }
+
+/* ---------- mâm cúng ---------- */
+.tray .deco { position: absolute; bottom: 52px; pointer-events: none; }
+.tray .banner-l { left: 2%; height: 46%; transform: rotate(-4deg); }
+.tray .lamps-r { right: 2%; height: 40%; }
+.tray-items { background: linear-gradient(#f5c95a, #c9922e); border: 3px solid var(--cream); outline: 3px solid var(--gold-d); }
+.ti { opacity: .2; filter: grayscale(1) brightness(1.2); }
+.ti img { height: 46px; width: auto; display: block; }
+.ti.on { opacity: 1; filter: none; animation: drop .35s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes drop { from { transform: translateY(-30px) scale(1.3); } }
+.vow { color: var(--plaque); }
+
+/* ---------- lượt đập: HUD dạng bảng đỏ nâu như mockup ---------- */
+.hud { background: none; }
+.hud .grow > .row:first-child { background: var(--plaque); border: 3px solid var(--cream); outline: 2px solid var(--plaque-d); border-radius: 10px; padding: 4px 10px; }
+.hud-name { color: var(--cream); text-transform: uppercase; }
+.timer-txt { color: var(--cream); font-size: 22px; width: 30px; }
+.bar { background: rgba(0, 0, 0, .35); }
+.score { display: inline-block; background: var(--plaque); color: var(--cream); border: 3px solid var(--cream); outline: 2px solid var(--plaque-d); border-radius: 8px; padding: 2px 12px; font-size: 30px; transform: rotate(-2deg); }
+.combo { background: var(--navy); color: var(--cream); border-radius: 8px; padding: 2px 10px; font-size: 18px; }
+.combo:empty { display: none; }
+.combo.hot { background: var(--red); color: #fff3c4; }
+.slip { transform-origin: 80% 95%; }
+.slip img { width: 150px; display: block; filter: drop-shadow(0 6px 6px rgba(0, 0, 0, .3)); }
+@keyframes swing { 0% { opacity: 1; transform: rotate(32deg) translate(18px, -20px); } 40% { opacity: 1; transform: rotate(-6deg); } 100% { opacity: 0; transform: rotate(0); } }
+.fx-img { position: absolute; transform: translate(-50%, -50%); pointer-events: none; }
+.tap-finger { position: absolute; z-index: 7; width: 60px; pointer-events: none; margin: 10px 0 0 -6px; animation: tapme .8s ease-in-out infinite; }
+.tap-finger img { width: 100%; }
+.bubble { background: var(--cream); border: 3px solid var(--navy); border-radius: 12px; font-style: normal; color: var(--ink); padding: 16px 12px 10px; box-shadow: 0 4px 0 var(--navy-d), 0 10px 20px rgba(0, 0, 0, .25); }
+.w-name { position: absolute; top: -13px; left: 10px; background: var(--navy); color: var(--cream); font-size: 14px; padding: 1px 10px; border-radius: 6px; text-transform: uppercase; }
+.bubble.heard { border-color: var(--jade); }
+.bubble.torn { border-color: var(--red); border-style: dashed; }
+.taunt { background: var(--cream); border-color: var(--navy); }
+.banner { background: linear-gradient(90deg, transparent, rgba(31, 63, 147, .95) 18%, rgba(31, 63, 147, .95) 82%, transparent); color: var(--cream); text-shadow: 2px 2px 0 var(--navy-d); }
+.pop.big { color: #ffd23a; text-shadow: 3px 3px 0 var(--plaque); }
+
+/* ---------- kết quả ---------- */
+.res-pic { display: flex; justify-content: center; height: 140px; flex: none; margin-top: 6px; }
+.res-pic img { height: 100%; animation: drop .5s cubic-bezier(.3, 1.6, .5, 1); }
+.big-score { color: var(--plaque); text-shadow: 3px 3px 0 var(--cream); }
+.stats b { color: var(--navy); }
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-img, .finger-hint, .tap-finger { animation: none; }
+}
+.title-screen .topbar { align-self: stretch; }
+.big-score .chip { text-shadow: none; font-size: 15px; letter-spacing: 0; }
+
+/* ---------- texture giấy / xanh / đỏ cắt từ bộ asset ---------- */
+.card, .frag:not(.dark), .npc-box, .bubble, .stats div, .item-card { background-image: url(../img/panel_bg.webp); background-size: cover; }
+.btn:not(.gold):not(.ghost):not(.dark), .npc-choice, .tab.on { background-image: url(../img/panel_blue.webp); background-size: cover; }
+.score, .hud .grow > .row:first-child, .chip.gold, .sign-title { background-image: url(../img/panel_red.webp); background-size: cover; }
+
+/* ---------- thanh điều hướng ở hẻm ---------- */
+.navbar { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; }
+.navbar .img-btn { max-width: none; }
+.navbar .btn { padding: 10px 14px; font-size: 18px; }
+
+/* ---------- vật phẩm ---------- */
+.sign-title { align-self: center; color: var(--cream); font-family: var(--cond); font-weight: 800; font-size: 34px; padding: 4px 22px; border: 3px solid var(--cream); outline: 3px solid var(--plaque-d); border-radius: 6px; transform: rotate(-2deg); text-shadow: 2px 2px 0 var(--plaque-d); }
+.tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+.tab { font-family: var(--cond); font-weight: 800; font-size: 20px; padding: 8px; border-radius: 10px; background: var(--cream); color: var(--navy); border: 3px solid var(--navy); }
+.tab.on { color: var(--cream); outline: 2px solid var(--navy-d); }
+.item-hero { display: flex; align-items: center; gap: 14px; background: var(--cream); border: 3px solid var(--navy); border-radius: 14px; padding: 10px 14px; }
+.item-hero img { width: 120px; height: 96px; object-fit: contain; }
+.item-hero b { display: block; font-family: var(--cond); font-size: 24px; color: var(--navy); text-transform: uppercase; }
+.using { display: inline-block; margin-top: 4px; font-family: var(--cond); font-weight: 800; font-size: 14px; color: var(--cream); background: var(--jade); padding: 2px 10px; border-radius: 6px; }
+.item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+.item-card { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; border: 3px solid var(--red); border-radius: 12px; box-shadow: 0 3px 0 var(--red-d); }
+.item-card img { width: 78px; height: 62px; object-fit: contain; }
+.item-card b { font-family: var(--cond); font-size: 16px; color: var(--red); text-transform: uppercase; }
+.item-card small { font-size: 12px; opacity: .75; text-align: center; }
+.item-card.on { border-color: var(--navy); box-shadow: 0 3px 0 var(--navy-d), 0 0 0 3px var(--mustard-d); }
+
+/* dép không có tay cầm: xoay quanh tâm */
+.slip.loose { transform-origin: 50% 50%; }
+.slip.loose img { width: 110px; }
+
+/* mâm đủ lễ */
+.tray.full .tray-full { left: 50%; transform: translateX(-50%); bottom: 30px; width: 84%; max-width: 330px; height: auto; }
+.tray.full .tray-items { position: relative; z-index: 1; }
+.tray.full .tray-doll { position: relative; z-index: 1; }

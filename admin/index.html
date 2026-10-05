@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Nghiệp Báo · Bảng điều khiển</title>
+<style>
+/* Bảng điều khiển cân bằng độ khó: tiêu đề + bộ lọc một hàng, ô số tổng quan, rồi các khối biểu đồ xếp lưới 2 cột (1 cột trên điện thoại). */
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --axis: #c3c2b7; --ring: rgba(11, 11, 11, .10);
+  --accent: #b5261f;                     /* đỏ giấy của game, chỉ dùng cho điểm nhấn giao diện */
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a;   /* chuỗi phân loại 1–3: xanh, cam, xanh ngọc (thứ tự cố định) */
+  --q1: #cde2fb; --q2: #9ec5f4; --q3: #6da7ec; --q4: #3987e5; --q5: #256abf; --q6: #184f95;  /* thang tuần tự xanh */
+  --good: #0ca30c; --warn: #fab219; --bad: #d03b3b; --good-ink: #006300;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --ring: rgba(255, 255, 255, .10);
+    --accent: #e66767; --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+    --q1: #104281; --q2: #184f95; --q3: #1c5cab; --q4: #2a78d6; --q5: #5598e7; --q6: #86b6ef;
+    --good-ink: #0ca30c;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --ring: rgba(255, 255, 255, .10);
+  --accent: #e66767; --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+  --q1: #104281; --q2: #184f95; --q3: #1c5cab; --q4: #2a78d6; --q5: #5598e7; --q6: #86b6ef;
+  --good-ink: #0ca30c;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--page); color: var(--ink); font: 14px/1.45 var(--font); padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom)); }
+.wrap { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+h1 { font-size: 20px; margin: 0; text-wrap: balance; }
+h2 { font-size: 15px; margin: 0; }
+.sub { color: var(--ink-2); margin: 2px 0 0; font-size: 13px; }
+.muted { color: var(--muted); }
+button, select, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+
+header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+header .grow { flex: 1; min-width: 200px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--ring); background: var(--surface); font-size: 12px; color: var(--ink-2); white-space: nowrap; }
+.chip.demo { border-color: var(--warn); color: var(--ink); }
+.chip.demo::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); }
+.btn { border: 1px solid var(--ring); background: var(--surface); border-radius: 8px; padding: 6px 12px; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--ring); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: none; padding: 6px 12px; border-right: 1px solid var(--ring); }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+select { border: 1px solid var(--ring); background: var(--surface); border-radius: 8px; padding: 6px 8px; }
+
+.card { background: var(--surface); border: 1px solid var(--ring); border-radius: 12px; padding: 16px; min-width: 0; }
+.card header { margin-bottom: 12px; gap: 8px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--ring); border-radius: 12px; padding: 12px 14px; }
+.tile .label { color: var(--ink-2); font-size: 13px; }
+.tile .value { font-size: 26px; font-weight: 650; margin-top: 2px; }
+.tile .note { font-size: 12px; color: var(--muted); }
+.tile.hero .value { font-size: 40px; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 860px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+
+/* bảng nhiệt độ khó */
+.heat { width: 100%; border-collapse: separate; border-spacing: 2px; font-variant-numeric: tabular-nums; }
+.heat th { font-weight: 600; color: var(--ink-2); text-align: left; padding: 4px 6px; font-size: 13px; }
+.heat thead th { text-align: center; }
+.heat td { border-radius: 6px; padding: 8px 6px; text-align: center; min-width: 76px; }
+.heat td b { display: block; font-size: 17px; }
+.heat td small { font-size: 11px; opacity: .85; }
+.heat td.empty { background: var(--grid); color: var(--muted); }
+.heat tr.target td { background: none; border: 1px dashed var(--axis); color: var(--ink-2); padding: 4px 6px; }
+.status { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.status i { font-style: normal; display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; color: #fff; font-size: 11px; }
+.status.ok i { background: var(--good); } .status.easy i { background: var(--warn); color: #3a2a00; } .status.hard i { background: var(--bad); }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--ink-2); margin-top: 8px; align-items: center; }
+.legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+.ramp { display: inline-flex; gap: 2px; }
+.ramp span { width: 18px; height: 10px; border-radius: 2px; }
+
+/* biểu đồ SVG */
+.chart { width: 100%; height: auto; display: block; overflow: visible; }
+.chart text { fill: var(--muted); font: 11px var(--font); font-variant-numeric: tabular-nums; }
+.chart text.ink { fill: var(--ink-2); font-size: 12px; }
+.chart text.val { fill: var(--ink); font-size: 12px; font-weight: 600; }
+.chart .gridl { stroke: var(--grid); stroke-width: 1; }
+.chart .base { stroke: var(--axis); stroke-width: 1; }
+.chart .quota { stroke: var(--ink); stroke-width: 1.5; }
+.chart .hit { fill: transparent; }
+.chart [data-tip]:hover .bar, .chart .hit:hover + .bar { opacity: .82; }
+.multiples { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 640px) { .multiples { grid-template-columns: minmax(0, 1fr); } }
+.multiples h3 { margin: 0 0 4px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+
+/* thanh ngang & xếp chồng (HTML) */
+.hb, .sb { display: flex; flex-direction: column; gap: 8px; }
+.hb-row, .sb-row { display: grid; grid-template-columns: minmax(96px, 34%) minmax(0, 1fr); align-items: center; gap: 10px; }
+.hb-label { color: var(--ink-2); font-size: 13px; text-align: right; overflow-wrap: anywhere; }
+.hb-track { display: flex; align-items: center; gap: 6px; min-width: 0; border-left: 1px solid var(--axis); padding: 2px 0; }
+.hb-bar { height: 18px; min-width: 2px; border-radius: 0 4px 4px 0; flex: none; max-width: calc(100% - 48px); }
+.hb-val { font-weight: 600; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sb-track { display: flex; gap: 2px; height: 22px; min-width: 0; }
+.sb-seg { display: flex; align-items: center; padding-left: 6px; font-size: 12px; font-weight: 600; min-width: 2px; overflow: hidden; white-space: nowrap; }
+.sb-seg:first-child { border-radius: 4px 0 0 4px; } .sb-seg:last-child { border-radius: 0 4px 4px 0; } .sb-seg:only-child { border-radius: 4px; }
+.hb-row:hover .hb-bar, .sb-seg:hover { opacity: .85; }
+table.list { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+table.list th, table.list td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+table.list th { color: var(--ink-2); font-weight: 600; font-size: 12px; }
+.scroll { overflow-x: auto; }
+
+#tip { position: fixed; z-index: 10; pointer-events: none; background: var(--ink); color: var(--surface); border-radius: 8px; padding: 6px 10px; font-size: 12px; max-width: 260px; display: none; box-shadow: 0 4px 14px rgba(0, 0, 0, .2); }
+
+/* đăng nhập */
+.login { max-width: 380px; margin: 40px auto; display: flex; flex-direction: column; gap: 10px; }
+.login input { border: 1px solid var(--ring); background: var(--page); border-radius: 8px; padding: 8px 10px; width: 100%; }
+.login label { display: flex; flex-direction: column; gap: 4px; color: var(--ink-2); font-size: 13px; }
+.err { color: var(--bad); font-size: 13px; min-height: 1em; }
+.empty-state { text-align: center; padding: 28px 12px; color: var(--ink-2); }
+[hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="grow">
+      <h1>Nghiệp Báo · Bảng điều khiển</h1>
+      <p class="sub">Số liệu chơi ẩn danh, để chỉnh chỉ tiêu điểm và thanh nghiệp theo người thật.</p>
+    </div>
+    <span class="chip" id="source">Chưa tải</span>
+    <button class="btn" id="logout" hidden>Đăng xuất</button>
+  </header>
+
+  <section class="card login" id="loginBox" hidden>
+    <h2>Đăng nhập admin</h2>
+    <p class="sub" id="loginNote">Dùng tài khoản Supabase có email nằm trong bảng <code>admins</code>.</p>
+    <form id="loginForm">
+      <label>Email <input id="email" type="email" autocomplete="username" required></label>
+      <label style="margin-top:8px">Mật khẩu <input id="password" type="password" autocomplete="current-password" required></label>
+      <p class="err" id="loginErr" role="alert"></p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn primary" type="submit" id="loginBtn">Đăng nhập</button>
+        <button class="btn" type="button" id="demoBtn">Xem dữ liệu mẫu</button>
+      </div>
+    </form>
+  </section>
+
+  <main id="dash" hidden style="display:flex;flex-direction:column;gap:16px">
+    <div class="filters">
+      <div class="seg" role="group" aria-label="Khoảng thời gian" id="range">
+        <button data-r="1" aria-pressed="false">24 giờ</button>
+        <button data-r="7" aria-pressed="true">7 ngày</button>
+        <button data-r="30" aria-pressed="false">30 ngày</button>
+        <button data-r="0" aria-pressed="false">Tất cả</button>
+      </div>
+      <select id="ver" aria-label="Phiên bản game"><option value="">Mọi phiên bản</option></select>
+      <button class="btn" id="refresh">Tải lại</button>
+      <span class="muted" id="stamp"></span>
+    </div>
+
+    <div class="tiles" id="tiles"></div>
+
+    <section class="card">
+      <header><div class="grow"><h2>Độ khó theo hình nhân và lượt</h2>
+        <p class="sub">Tỉ lệ lượt đạt chỉ tiêu (không bị nghiệp quật). Mục tiêu lấy từ mô phỏng người chơi khá: 80% / 50% / 20%.</p></div></header>
+      <div class="scroll"><table class="heat" id="heat"></table></div>
+      <div class="legend"><span>Tỉ lệ đạt</span><span class="ramp"><span style="background:var(--q1)"></span><span style="background:var(--q2)"></span><span style="background:var(--q3)"></span><span style="background:var(--q4)"></span><span style="background:var(--q5)"></span><span style="background:var(--q6)"></span></span><span>0% → 100%</span><span>· ô xám: chưa có lượt</span></div>
+    </section>
+
+    <section class="card">
+      <header><div class="grow"><h2>Phân bố điểm</h2><p class="sub">Số lượt theo khoảng điểm, vạch đen là chỉ tiêu của lượt đó. Lượt bị nghiệp quật không tính.</p></div></header>
+      <div class="multiples" id="hists"></div>
+    </section>
+
+    <div class="grid2">
+      <section class="card">
+        <header><div class="grow"><h2>Người chơi đi tới đâu</h2><p class="sub">Phần trăm người chơi đã từng tới mỗi mốc.</p></div></header>
+        <div id="funnel"></div>
+      </section>
+      <section class="card">
+        <header><div class="grow"><h2>Lời thì thầm</h2><p class="sub">Nghe trọn hay cắt ngang, theo lượt của hình nhân.</p></div></header>
+        <div id="whisper"></div>
+        <div class="legend"><span><i class="sw" style="background:var(--s1)"></i>Nghe trọn</span><span><i class="sw" style="background:var(--s2)"></i>Cắt ngang</span></div>
+      </section>
+    </div>
+
+    <div class="grid2">
+      <section class="card">
+        <header><div class="grow"><h2>Lý do thua lượt</h2><p class="sub">Trong các lượt có chỉ tiêu (lượt 1–3).</p></div></header>
+        <div id="lose"></div>
+        <div class="legend"><span><i class="sw" style="background:var(--s1)"></i>Đạt</span><span><i class="sw" style="background:var(--s2)"></i>Thiếu điểm</span><span><i class="sw" style="background:var(--s3)"></i>Nghiệp quật</span></div>
+      </section>
+      <section class="card">
+        <header><div class="grow"><h2>Kết thúc đã mở</h2><p class="sub">Số người chơi mở được mỗi kết thúc.</p></div></header>
+        <div id="endings"></div>
+      </section>
+    </div>
+
+    <section class="card">
+      <header><div class="grow"><h2>Phiên gần đây</h2><p class="sub">Mỗi dòng là một lần mở game. Mã người chơi là mã ngẫu nhiên.</p></div></header>
+      <div class="scroll"><table class="list" id="recent"></table></div>
+    </section>
+  </main>
+  <p class="empty-state" id="empty" hidden></p>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script src="../js/config.js"></script>
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const CFG = window.DTN_TELEMETRY || {};
+  const BASE = (CFG.url || '').replace(/\/$/, '');
+  const DOLLS = [['batam', 'Bà Tư'], ['sep', 'Anh Khải'], ['dongnghiep', 'Phát'], ['nguoiquen', 'Diễm'], ['traxanh', 'My']];
+  const QUOTA = [2000, 2200, 2300], TARGET = [.8, .5, .2];
+  const STAGES = [
+    ['open', 'Mở game'], ['intro', 'Qua phần mở đầu'], ['play', 'Đập lượt đầu'], ['frag', 'Mở mảnh ký ức đầu'],
+    ['s05', 'Thấy tờ báo'], ['s06', 'Lục thùng rác'], ['s07', 'Tới cảnh lật mặt'], ['end', 'Mở một kết thúc']
+  ];
+  const ENDS = [['A', 'Hẻm không tên'], ['B', 'Im tiếng'], ['H', 'Về nhà (ẩn)']];
+  const nf = new Intl.NumberFormat('vi-VN');
+  const pct = (a, b) => b ? Math.round(a / b * 100) : null;
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const store = { get: k => { try { return sessionStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { v == null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (e) { /* */ } } };
+
+  let ALL = [], mode = '', range = 7, ver = '';
+
+  /* ---------- nguồn dữ liệu ---------- */
+  async function login(email, password) {
+    const r = await fetch(BASE + '/auth/v1/token?grant_type=password', { method: 'POST', headers: { apikey: CFG.anonKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.access_token) throw new Error(j.error_description || j.msg || 'Sai email hoặc mật khẩu.');
+    store.set('dtn-admin-token', j.access_token);
+  }
+  async function fetchEvents() {
+    const tok = store.get('dtn-admin-token'); if (!tok) throw Object.assign(new Error('Chưa đăng nhập'), { auth: true });
+    const out = [], since = new Date(Date.now() - 90 * 864e5).toISOString(); // giữ tối đa 90 ngày trong trang, lọc tiếp ở dưới
+    for (let off = 0; off < 50000; off += 1000) {
+      const u = `${BASE}/rest/v1/events?select=player,session,ev,data,app,created_at&created_at=gte.${encodeURIComponent(since)}&order=id.asc&limit=1000&offset=${off}`;
+      const r = await fetch(u, { headers: { apikey: CFG.anonKey, Authorization: 'Bearer ' + tok } });
+      if (r.status === 401) throw Object.assign(new Error('Phiên đăng nhập đã hết hạn.'), { auth: true });
+      if (!r.ok) throw new Error('Không tải được số liệu (' + r.status + ').');
+      const rows = await r.json(); out.push(...rows);
+      if (rows.length < 1000) break;
+    }
+    return out;
+  }
+
+  // dữ liệu mẫu: người chơi ảo đi theo truyện, tỉ lệ qua chỉ tiêu dao động quanh mục tiêu. Chỉ để xem trước giao diện.
+  function demoEvents() {
+    let seed = 7; const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const ev = [], now = Date.now(), apps = ['nghiepbao-0.3', 'nghiepbao-0.2'];
+    for (let p = 0; p < 140; p++) {
+      const player = 'd' + Math.floor(rand() * 0xfffffff).toString(16).padStart(7, '0') + '-demo', skill = rand() * 1.2 - .25, app = apps[rand() < .8 ? 0 : 1];
+      let t = now - rand() * 20 * 864e5, s = 1;
+      const push = (e, data = {}) => { ev.push({ player, session: s, ev: e, data, app, created_at: new Date(t).toISOString() }); t += 20000 + rand() * 60000; };
+      push('session_start');
+      if (rand() < .18) push('intro_skip', { at: Math.floor(rand() * 4) }); else push('scene', { id: 'intro' });
+      if (rand() < .12) continue;
+      const rounds = {}; let total = 0, quitAt = 6 + rand() * 40 + skill * 20;
+      for (let step = 0; step < 60 && total < quitAt; step++) {
+        const open = DOLLS.filter(([id]) => (rounds[id] || 0) < 3); if (!open.length) break;
+        const [id] = total === 0 ? DOLLS[0] : open[Math.floor(rand() * open.length)];
+        const r = rounds[id] || 0, diffBias = { batam: .05, sep: 0, dongnghiep: -.08, nguoiquen: .02, traxanh: -.03 }[id];
+        push('round_start', { doll: id, n: r + 1 });
+        const passP = Math.max(.02, Math.min(.98, [.82, .52, .24][r] + skill * .45 + diffBias));
+        const burst = rand() < Math.max(0, [.03, .12, .22][r] - skill * .2);
+        const passed = !burst && rand() < passP;
+        const q = QUOTA[r], score = Math.max(200, Math.round((passed ? q + rand() * 1300 : q - 120 - rand() * 900) / 10) * 10);
+        for (let i = 0; i < 2; i++) push('whisper', { doll: id, key: `${id}-${r}-${i}`, res: rand() < .45 + r * .15 + skill * .2 ? 'heard' : 'cut' });
+        push('round_end', { doll: id, n: r + 1, score: burst ? Math.round(score * .4) : score, quota: q, passed, reason: burst ? 'karma' : 'time', karmaMax: burst ? 100 : Math.round(rand() * 70), heardN: Math.floor(rand() * 3), cut: Math.floor(rand() * 2), hits: Math.round(score / 15), misses: Math.floor(rand() * 30) });
+        if (passed) { rounds[id] = r + 1; total++; if (total === 5) push('scene', { id: 's05' }); if (total === 8) push('scene', { id: 's06' }); }
+        if (rand() < .08) { s++; push('session_start'); }
+      }
+      if (DOLLS.every(([id]) => rounds[id] >= 3)) { push('scene', { id: 's07' }); push('ending', { id: rand() < .5 ? 'A' : rand() < .6 ? 'B' : 'H' }); }
+    }
+    return ev;
+  }
+
+  /* ---------- tính toán ---------- */
+  function filtered() {
+    const since = range ? Date.now() - range * 864e5 : 0;
+    return ALL.filter(e => (!since || Date.parse(e.created_at) >= since) && (!ver || e.app === ver));
+  }
+  function compute(E) {
+    const players = new Set(), sessions = new Set(), byPlayer = new Map();
+    const rounds = [], whispers = [[0, 0], [0, 0], [0, 0]], ends = { A: new Set(), B: new Set(), H: new Set() };
+    for (const e of E) {
+      players.add(e.player); sessions.add(e.player + '#' + e.session);
+      let st = byPlayer.get(e.player); if (!st) byPlayer.set(e.player, st = new Set());
+      const d = e.data || {};
+      if (e.ev === 'session_start') st.add('open');
+      if (e.ev === 'intro_skip' || (e.ev === 'scene' && d.id === 'intro')) st.add('intro');
+      if (e.ev === 'round_start') st.add('play');
+      if (e.ev === 'scene' && ['s05', 's06', 's07'].includes(d.id)) st.add(d.id);
+      if (e.ev === 'ending' && ends[d.id]) { st.add('end'); ends[d.id].add(e.player); }
+      if (e.ev === 'round_end') { rounds.push({ ...d, player: e.player, session: e.session, at: e.created_at }); if (d.passed && d.n <= 3) st.add('frag'); }
+      if (e.ev === 'whisper' && typeof d.key === 'string') { const r = +d.key.split('-')[1]; if (whispers[r]) whispers[r][d.res === 'heard' ? 0 : 1]++; }
+    }
+    // mốc sau ngầm hiểu đã qua mốc trước (người chơi cũ có thể thiếu sự kiện mở đầu)
+    for (const st of byPlayer.values()) for (let i = STAGES.length - 1; i > 0; i--) if (st.has(STAGES[i][0])) for (let j = 0; j < i; j++) st.add(STAGES[j][0]);
+    const quotaRounds = rounds.filter(r => r.n >= 1 && r.n <= 3);
+    return { players, sessions, byPlayer, rounds, quotaRounds, whispers, ends };
+  }
+
+  /* ---------- vẽ ---------- */
+  const tip = $('#tip');
+  document.addEventListener('pointermove', e => {
+    const t = e.target.closest && e.target.closest('[data-tip]');
+    if (!t) { tip.style.display = 'none'; return; }
+    tip.innerHTML = t.getAttribute('data-tip'); tip.style.display = 'block';
+    const w = tip.offsetWidth, h = tip.offsetHeight;
+    tip.style.left = Math.min(innerWidth - w - 8, e.clientX + 12) + 'px'; tip.style.top = Math.max(8, e.clientY - h - 10) + 'px';
+  });
+
+  function tiles(C) {
+    const q = C.quotaRounds, pass = q.filter(r => r.passed).length, burst = q.filter(r => r.reason === 'karma').length;
+    const endN = new Set([...C.ends.A, ...C.ends.B, ...C.ends.H]).size;
+    const list = [
+      ['Tỉ lệ đạt chỉ tiêu', pct(pass, q.length), '%', `${nf.format(pass)} / ${nf.format(q.length)} lượt có chỉ tiêu`, true],
+      ['Người chơi', C.players.size, '', `${nf.format(C.sessions.size)} phiên`],
+      ['Lượt đập', C.rounds.length, '', C.players.size ? `${(C.rounds.length / C.players.size).toFixed(1)} lượt / người` : ''],
+      ['Bị nghiệp quật', pct(burst, q.length), '%', `${nf.format(burst)} lượt`],
+      ['Mở được kết thúc', endN, '', C.players.size ? `${pct(endN, C.players.size)}% người chơi` : '']
+    ];
+    $('#tiles').innerHTML = list.map(([l, v, u, n, hero]) => `<div class="tile${hero ? ' hero' : ''}"><div class="label">${l}</div><div class="value">${v == null ? '–' : nf.format(v) + u}</div><div class="note">${n || '&nbsp;'}</div></div>`).join('');
+  }
+
+  const RAMP = ['--q1', '--q2', '--q3', '--q4', '--q5', '--q6'];
+  const cellColor = p => `var(${RAMP[Math.min(5, Math.floor(p / 100 * 6))]})`;
+  const cellInk = p => Math.floor(p / 100 * 6) >= 3 ? '#fff' : 'var(--ink)';
+  function statusOf(p, target) {
+    if (p == null) return '';
+    const d = p / 100 - target;
+    return d > .15 ? `<span class="status easy"><i>↑</i>Quá dễ</span>` : d < -.15 ? `<span class="status hard"><i>↓</i>Quá khó</span>` : `<span class="status ok"><i>✓</i>Vừa</span>`;
+  }
+  function heat(C) {
+    const cell = (rs, r) => {
+      if (!rs.length) return `<td class="empty" data-tip="Chưa có lượt nào">–</td>`;
+      const ok = rs.filter(x => x.passed).length, kb = rs.filter(x => x.reason === 'karma').length, p = pct(ok, rs.length);
+      return `<td style="background:${cellColor(p)};color:${cellInk(p)}" data-tip="Lượt ${r + 1} · chỉ tiêu ${nf.format(QUOTA[r])}<br>${ok}/${rs.length} lượt đạt (${p}%)<br>Nghiệp quật: ${kb} lượt"><b>${p}%</b><small>${rs.length} lượt · quật ${pct(kb, rs.length)}%</small></td>`;
+    };
+    const rows = DOLLS.map(([id, name]) => `<tr><th scope="row">${name}</th>${[0, 1, 2].map(r => cell(C.quotaRounds.filter(x => x.doll === id && x.n === r + 1), r)).join('')}</tr>`).join('');
+    const all = [0, 1, 2].map(r => C.quotaRounds.filter(x => x.n === r + 1));
+    const allRow = `<tr><th scope="row">Tất cả</th>${all.map((rs, r) => cell(rs, r)).join('')}</tr>`;
+    const target = `<tr class="target"><th scope="row">Mục tiêu</th>${TARGET.map((t, r) => { const rs = all[r], p = pct(rs.filter(x => x.passed).length, rs.length); return `<td>${Math.round(t * 100)}% ${statusOf(p, t)}</td>`; }).join('')}</tr>`;
+    $('#heat').innerHTML = `<thead><tr><th></th>${QUOTA.map((q, r) => `<th scope="col">Lượt ${r + 1}<br><span class="muted" style="font-weight:400">chỉ tiêu ${nf.format(q)}</span></th>`).join('')}</tr></thead><tbody>${rows}${allRow}${target}</tbody>`;
+  }
+
+  // vạch chia tròn: 1, 2, 5 × 10^k
+  function niceStep(maxV, ticks = 4) {
+    const raw = Math.max(1, maxV) / ticks, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    return [1, 2, 5, 10].map(m => m * mag).find(st => st >= raw);
+  }
+  // biểu đồ cột vẽ đúng bề rộng thật của khung (W), nên chữ luôn giữ cỡ 11px
+  function histogram(rs, quota, W) {
+    const H = 170, L = 34, B = 22, T = 16, R = 8, bin = 250, max = 5000;
+    const n = Math.ceil(max / bin), counts = Array(n).fill(0);
+    for (const r of rs) counts[Math.min(n - 1, Math.floor((r.score || 0) / bin))]++;
+    const top = Math.max(...counts), step = niceStep(top), niceTop = Math.max(step, Math.ceil(top / step) * step);
+    const x = v => L + (W - L - R) * v / max, y = c => H - B - (H - B - T) * c / niceTop, bw = (W - L - R) / n;
+    let g = '';
+    for (let v = 0; v <= niceTop; v += step) { const yy = y(v); g += `<line class="${v ? 'gridl' : 'base'}" x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}"/><text x="${L - 6}" y="${yy + 4}" text-anchor="end">${nf.format(v)}</text>`; }
+    for (const v of [0, 1000, 2000, 3000, 4000, 5000]) g += `<text x="${x(v)}" y="${H - 6}" text-anchor="middle">${v ? v / 1000 + 'k' : '0'}</text>`;
+    counts.forEach((c, i) => {
+      if (!c) return;
+      const w = Math.max(1, Math.min(24, bw - 2)), x0 = x(i * bin) + (bw - w) / 2, yy = y(c), h = H - B - yy, r = Math.min(4, h, w / 2);
+      const path = `M${x0},${H - B} V${yy + r} Q${x0},${yy} ${x0 + r},${yy} H${x0 + w - r} Q${x0 + w},${yy} ${x0 + w},${yy + r} V${H - B} Z`;
+      const last = i === n - 1 ? '+' : '–' + nf.format((i + 1) * bin - 1);
+      g += `<g data-tip="${nf.format(i * bin)}${last} điểm: ${c} lượt"><rect class="hit" x="${x(i * bin)}" y="${T}" width="${bw}" height="${H - B - T}"/><path class="bar" d="${path}" fill="var(--s1)"/></g>`;
+    });
+    const qx = x(quota);
+    g += `<line class="quota" x1="${qx}" x2="${qx}" y1="${T - 6}" y2="${H - B}"/><text class="ink" x="${qx + 4}" y="${T - 2}">chỉ tiêu ${nf.format(quota)}</text>`;
+    return `<svg class="chart" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Phân bố điểm, chỉ tiêu ${quota}">${g}</svg>`;
+  }
+  let lastC = null;
+  function hists(C) {
+    lastC = C;
+    const box = $('#hists'), cols = getComputedStyle(box).gridTemplateColumns.split(' ').length;
+    const W = Math.max(220, Math.floor((box.clientWidth - 12 * (cols - 1)) / cols));
+    box.innerHTML = [0, 1, 2].map(r => {
+      const rs = C.quotaRounds.filter(x => x.n === r + 1 && x.reason !== 'karma'), ok = rs.filter(x => x.score >= QUOTA[r]).length;
+      return `<div><h3>Lượt ${r + 1} · ${rs.length} lượt · ${pct(ok, rs.length) ?? '–'}% trên chỉ tiêu</h3>${rs.length ? histogram(rs, QUOTA[r], W) : '<p class="muted">Chưa có lượt.</p>'}</div>`;
+    }).join('');
+  }
+  let rz = 0;
+  addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => lastC && hists(lastC), 150); });
+
+  // thanh ngang một chuỗi bằng HTML (chữ không co giãn theo khung): nhãn trái, giá trị ở đầu thanh
+  function hbars(items, { color = 'var(--s1)', fmt = v => v, tipFn } = {}) {
+    const max = Math.max(1, ...items.map(i => i.v));
+    return `<div class="hb">${items.map(it => `<div class="hb-row" data-tip="${esc(tipFn ? tipFn(it) : it.label + ': ' + fmt(it.v))}">
+      <span class="hb-label">${esc(it.label)}</span>
+      <span class="hb-track"><span class="hb-bar" style="width:${(it.v / max * 100).toFixed(1)}%;background:${color}"></span><span class="hb-val">${fmt(it.v)}</span></span></div>`).join('')}</div>`;
+  }
+  function funnel(C) {
+    const n = C.players.size;
+    const items = STAGES.map(([k, label]) => { let c = 0; for (const st of C.byPlayer.values()) if (st.has(k)) c++; return { label, v: pct(c, n) ?? 0, c }; });
+    $('#funnel').innerHTML = n ? hbars(items, { fmt: v => v + '%', tipFn: it => `${it.label}: ${it.c} / ${n} người chơi (${it.v}%)` }) : '<p class="muted">Chưa có người chơi.</p>';
+  }
+  function endings(C) {
+    const items = ENDS.map(([k, label]) => ({ label, v: C.ends[k].size }));
+    $('#endings').innerHTML = hbars(items, { fmt: v => nf.format(v), tipFn: it => `${it.label}: ${it.v} người chơi` });
+  }
+
+  // thanh xếp chồng 100% bằng HTML: các đoạn cách nhau 2px, nhãn % chỉ đặt trong đoạn đủ rộng
+  function stack100(rows, colors, names, inks) {
+    return `<div class="sb">${rows.map(rw => {
+      const tot = rw.vals.reduce((a, b) => a + b, 0);
+      if (!tot) return `<div class="sb-row"><span class="hb-label">${esc(rw.label)}</span><span class="muted">chưa có dữ liệu</span></div>`;
+      return `<div class="sb-row"><span class="hb-label">${esc(rw.label)}</span><span class="sb-track">${rw.vals.map((v, i) => {
+        if (!v) return '';
+        const p = Math.round(v / tot * 100);
+        return `<span class="sb-seg" style="flex:${v};background:${colors[i]};color:${inks[i]}" data-tip="${esc(rw.label)} · ${names[i]}: ${nf.format(v)} (${p}%)">${p >= 12 ? p + '%' : ''}</span>`;
+      }).join('')}</span></div>`;
+    }).join('')}</div>`;
+  }
+  function whisper(C) {
+    $('#whisper').innerHTML = stack100(C.whispers.map((v, r) => ({ label: 'Lượt ' + (r + 1), vals: v })), ['var(--s1)', 'var(--s2)'], ['Nghe trọn', 'Cắt ngang'], ['#fff', '#fff']);
+  }
+  function lose(C) {
+    const rows = [0, 1, 2].map(r => { const rs = C.quotaRounds.filter(x => x.n === r + 1); return { label: 'Lượt ' + (r + 1), vals: [rs.filter(x => x.passed).length, rs.filter(x => !x.passed && x.reason !== 'karma').length, rs.filter(x => x.reason === 'karma').length] }; });
+    $('#lose').innerHTML = stack100(rows, ['var(--s1)', 'var(--s2)', 'var(--s3)'], ['Đạt', 'Thiếu điểm', 'Nghiệp quật'], ['#fff', '#fff', '#0b0b0b']);
+  }
+  function recent(C, E) {
+    const sess = new Map();
+    for (const e of E) {
+      const k = e.player + '#' + e.session; let s = sess.get(k);
+      if (!s) sess.set(k, s = { player: e.player, at: e.created_at, last: e.created_at, rounds: 0, pass: 0, best: 0, app: e.app });
+      s.last = e.created_at;
+      if (e.ev === 'round_end') { s.rounds++; if (e.data.passed) s.pass++; s.best = Math.max(s.best, e.data.score || 0); }
+    }
+    const rows = [...sess.values()].sort((a, b) => b.last.localeCompare(a.last)).slice(0, 25);
+    const dt = s => new Date(s).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const dur = s => { const m = Math.round((Date.parse(s.last) - Date.parse(s.at)) / 60000); return m < 1 ? '<1 phút' : m + ' phút'; };
+    $('#recent').innerHTML = `<thead><tr><th>Bắt đầu</th><th>Người chơi</th><th>Thời lượng</th><th>Lượt</th><th>Đạt</th><th>Điểm cao nhất</th><th>Phiên bản</th></tr></thead><tbody>` +
+      (rows.map(s => `<tr><td>${dt(s.at)}</td><td>${esc(String(s.player).slice(0, 8))}</td><td>${dur(s)}</td><td>${s.rounds}</td><td>${s.pass}</td><td>${s.best ? nf.format(s.best) : '–'}</td><td>${esc(s.app || '')}</td></tr>`).join('') || `<tr><td colspan="7" class="muted">Chưa có phiên.</td></tr>`) + '</tbody>';
+  }
+
+  function render() {
+    const E = filtered(), C = compute(E);
+    $('#empty').hidden = !!E.length; $('#empty').textContent = E.length ? '' : 'Chưa có số liệu trong khoảng này. Khi có người chơi bản đã cấu hình, số liệu sẽ hiện ở đây.';
+    tiles(C); heat(C); hists(C); funnel(C); whisper(C); lose(C); endings(C); recent(C, E);
+  }
+
+  /* ---------- điều khiển ---------- */
+  function fillVersions() {
+    const vs = [...new Set(ALL.map(e => e.app).filter(Boolean))].sort().reverse();
+    $('#ver').innerHTML = '<option value="">Mọi phiên bản</option>' + vs.map(v => `<option${v === ver ? ' selected' : ''}>${esc(v)}</option>`).join('');
+  }
+  async function load() {
+    $('#stamp').textContent = 'Đang tải…';
+    try {
+      ALL = mode === 'demo' ? demoEvents() : await fetchEvents();
+      fillVersions(); render();
+      $('#stamp').textContent = 'Cập nhật ' + new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ` · ${nf.format(ALL.length)} sự kiện`;
+    } catch (e) {
+      if (e.auth) { store.set('dtn-admin-token', null); return showLogin(e.message); }
+      $('#stamp').textContent = e.message;
+    }
+  }
+  function showDash(m) {
+    mode = m; $('#loginBox').hidden = true; $('#dash').hidden = false;
+    $('#logout').hidden = m !== 'live';
+    const src = $('#source'); src.className = 'chip' + (m === 'demo' ? ' demo' : ''); src.textContent = m === 'demo' ? 'Dữ liệu mẫu, không phải người chơi thật' : 'Supabase · số liệu thật';
+    load();
+  }
+  function showLogin(msg = '') {
+    $('#dash').hidden = true; $('#loginBox').hidden = false; $('#logout').hidden = true;
+    $('#source').className = 'chip'; $('#source').textContent = BASE ? 'Chưa đăng nhập' : 'Chưa cấu hình Supabase';
+    $('#loginErr').textContent = msg;
+    const can = !!(BASE && CFG.anonKey);
+    $('#loginForm').querySelectorAll('input, #loginBtn').forEach(el => el.disabled = !can);
+    if (!can) $('#loginNote').textContent = 'Chưa cấu hình: điền url và anonKey trong js/config.js (xem docs/ADMIN.md). Trong lúc chờ, bạn có thể xem dữ liệu mẫu.';
+  }
+  $('#loginForm').addEventListener('submit', async e => {
+    e.preventDefault(); $('#loginErr').textContent = ''; $('#loginBtn').disabled = true;
+    try { await login($('#email').value.trim(), $('#password').value); $('#password').value = ''; showDash('live'); }
+    catch (err) { $('#loginErr').textContent = err.message; }
+    $('#loginBtn').disabled = false;
+  });
+  $('#demoBtn').addEventListener('click', () => showDash('demo'));
+  $('#logout').addEventListener('click', () => { store.set('dtn-admin-token', null); showLogin('Đã đăng xuất.'); });
+  $('#refresh').addEventListener('click', load);
+  $('#ver').addEventListener('change', e => { ver = e.target.value; render(); });
+  $('#range').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    range = +b.dataset.r; $('#range').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); render();
+  });
+
+  if (/[?&]demo\b/.test(location.search)) showDash('demo');
+  else if (BASE && store.get('dtn-admin-token')) showDash('live');
+  else showLogin();
+})();
+</script>
+</body>
+</html>
