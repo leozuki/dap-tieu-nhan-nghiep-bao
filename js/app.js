@@ -14,7 +14,17 @@
   const SLOTS = [44, 122, 200, 278, 356]; // vị trí 5 hình nhân trên bàn
   const TOTAL_W = DOLLS.reduce((n, d) => n + d.whispers.flat().length, 0);
   const TIERS = [2500, 3300, 4000]; // ngưỡng Đã tay / Hả giận / Trút sạch (người chơi giỏi ≈ 2.900–3.400)
-  const HIDDEN_N = Math.ceil(TOTAL_W * State.HIDDEN_RATIO);
+  const hiddenN = () => Math.ceil(TOTAL_W * State.hiddenRatio());
+  const isHard = () => S().mode === 'kho';
+  // chọn chế độ: Bình thường (độ khó gốc) / Nghiệp Báo (thanh nghiệp, chỉ tiêu, vật ném)
+  const modePicker = () => `<div class="mode-pick" role="radiogroup" aria-label="Chế độ chơi">
+    <button role="radio" aria-checked="${!isHard()}" data-mode="thuong"><b>Bình thường</b><small>Đập cho đã tay</small></button>
+    <button role="radio" aria-checked="${isHard()}" data-mode="kho"><b>☯ Nghiệp Báo</b><small>Đập bừa là nghiệp quật</small></button></div>`;
+  function bindModePicker(after) {
+    app.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => {
+      Sfx.unlock(); S().mode = b.dataset.mode; State.save(); State.log('mode', { mode: b.dataset.mode }); Sfx.page(); after();
+    }));
+  }
 
   Sfx.setMuted(S().muted);
 
@@ -55,13 +65,15 @@
     title() {
       show(`<div class="screen title-screen">
         <div class="topbar"><span class="grow"></span><button class="icon-btn" data-act="settings" aria-label="Cài đặt">⚙️</button></div>
-        <div class="logo"><div class="logo-sm">Trò chơi xả stress</div>${Art.img('logo', 'logo-img', 'Đập Tiểu Nhân')}<div class="hard-badge">☯ BẢN NGHIỆP BÁO</div><div class="tag">Đập xả stress. <b>“Sự thật”</b> stress hơn.</div></div>
+        <div class="logo"><div class="logo-sm">Trò chơi xả stress</div>${Art.img('logo', 'logo-img', 'Đập Tiểu Nhân')}${isHard() ? '<div class="hard-badge">☯ BẢN NGHIỆP BÁO</div>' : ''}<div class="tag">Đập xả stress. <b>“Sự thật”</b> stress hơn.</div></div>
         <div class="hero hero-v2">${Art.img('mam_cung_full', 'hero-altar')}<div class="hero-dolls">${DOLLS.map((d, i) => Art.dollHTML(d, { pose: i % 2 ? 'taunt' : 'base' })).join('')}</div><div class="hero-table"></div></div>
         <button class="img-btn pulse" data-act="go" aria-label="Vào hẻm">${Art.img('btn-vao-hem')}</button>
-        ${rulesHTML()}
+        ${modePicker()}
+        ${isHard() ? rulesHTML() : ''}
         <p class="note">${esc(UI.contentNote)}</p>
       </div>`, 'is-title');
       on('[data-act=settings]', () => go('settings'));
+      bindModePicker(() => go('title'));
       on('[data-act=go]', () => {
         if (!S().seen.intro) return go('intro', () => scene('s01', () => go('hub')));
         if (!S().seen.s01) return scene('s01', () => go('hub'));
@@ -160,7 +172,7 @@
       const heard = d.whispers.flatMap((p, rr) => p.map((_, i) => s.heard[State.heardKey(d.id, rr, i)] ? 1 : 0)).reduce((a, b) => a + b, 0);
       const frags = d.frags.map((f, i) => i < r
         ? `<div class="frag"><span class="kind">${f.kind}</span>${f.title ? `<b>${esc(f.title)}</b> ` : ''}${esc(f.text)}</div>`
-        : `<div class="frag locked"><span class="kind">${f.kind}</span>Lượt ${i + 1} đạt ${HARD.quota[i].toLocaleString('vi-VN')} điểm sẽ mở mảnh này.</div>`).join('');
+        : `<div class="frag locked"><span class="kind">${f.kind}</span>Lượt ${i + 1}${isHard() ? ` đạt ${HARD.quota[i].toLocaleString('vi-VN')} điểm` : ''} sẽ mở mảnh này.</div>`).join('');
       show(`<div class="screen sheet">
         <div class="topbar"><button class="icon-btn" data-act="back" aria-label="Quay lại">←</button><span class="grow"></span></div>
         <div class="sheet-doll">${Art.dollHTML(d, { tier, pose: 'base' })}</div>
@@ -173,7 +185,7 @@
         </form>
         <p class="accuse">“${esc(d.intro)}”</p>
         <div class="row wrap" style="justify-content:center;gap:6px;margin:6px 0 10px">
-          <span class="chip">Mảnh ký ức ${Math.min(r, 3)}/3</span>${r < 3 ? `<span class="chip quota-chip">🎯 ${HARD.quota[r].toLocaleString('vi-VN')}</span>` : ''}<span class="chip">👂 ${heard}/6 lời</span>${s.best[d.id] ? `<span class="chip gold">🏆 ${s.best[d.id].toLocaleString('vi-VN')}</span>` : ''}
+          <span class="chip">Mảnh ký ức ${Math.min(r, 3)}/3</span>${r < 3 && isHard() ? `<span class="chip quota-chip">🎯 ${HARD.quota[r].toLocaleString('vi-VN')}</span>` : ''}<span class="chip">👂 ${heard}/6 lời</span>${s.best[d.id] ? `<span class="chip gold">🏆 ${s.best[d.id].toLocaleString('vi-VN')}</span>` : ''}
         </div>
         <div class="frags">${frags}</div>
         <button class="btn big" data-act="play" style="margin-top:12px">Bày mâm & đập</button>
@@ -206,8 +218,8 @@
           <div class="tray-items">${steps.map((s, i) => `<span class="ti" id="ti${i}">${Art.img(s[0])}</span>`).join('')}</div></div>
         ${thayHTML(UI.askVow[Math.min(r, 2)])}
         <div class="vow" id="vow"></div>
-        ${S().total === 0 ? '<p class="muted center">Mẹo: đập nhanh nhưng đừng đập bừa. Hình nhân né thì <b>chờ</b>: combo vẫn giữ, đập vào khoảng trống mới mất combo và tăng nghiệp.</p>' : ''}
-        ${r === 1 ? `<p class="muted center">Từ lượt này ${esc(d.name)} sẽ né kiểu khác và ném <b>${esc((HARD.dolls[d.id] || {}).throw || 'đồ')}</b> vào tay bạn. Chạm vào để gạt.</p>` : ''}
+        ${S().total === 0 ? (isHard() ? '<p class="muted center">Mẹo: đập nhanh nhưng đừng đập bừa. Hình nhân né thì <b>chờ</b>: combo vẫn giữ, đập vào khoảng trống mới mất combo và tăng nghiệp.</p>' : '<p class="muted center">Mẹo: chạm thật nhanh vào hình nhân để giữ combo. Né thì chờ nó hiện lại.</p>') : ''}
+        ${r === 1 && isHard() ? `<p class="muted center">Từ lượt này ${esc(d.name)} sẽ né kiểu khác và ném <b>${esc((HARD.dolls[d.id] || {}).throw || 'đồ')}</b> vào tay bạn. Chạm vào để gạt.</p>` : ''}
         <button class="btn big gold" id="step">${steps[0][1]}</button>
       </div>`);
       on('[data-act=back]', () => go('sheet', d));
@@ -246,7 +258,7 @@
         <h2 class="center">${tierIdx >= 0 ? UI.tiers[tierIdx] + '!' : 'Hết giờ'}</h2>
         <div class="big-score">${res.score.toLocaleString('vi-VN')}${isBest ? '<span class="chip gold">kỷ lục</span>' : ''}</div>
         <div class="stats"><div><b>${res.hits}</b>nhát</div><div><b>${res.maxCombo}</b>combo</div><div><b>${acc}%</b>trúng</div><div><b>${res.heard.length}/2</b>đã nghe</div></div>
-        <p class="muted center">Nghiệp cao nhất ${res.karmaMax}% · gạt ${res.swats} · bị ném trúng ${res.struck}</p>
+        ${res.mode === 'kho' ? `<p class="muted center">Nghiệp cao nhất ${res.karmaMax}% · gạt ${res.swats} · bị ném trúng ${res.struck}</p>` : ''}
         ${newFrag ? `<div class="frag new"><span class="kind">Mảnh ký ức mới · ${newFrag.kind}</span>
           ${newFrag.item ? `<div class="ev-ico">${Art.item(newFrag.item, 1.1)}</div><b>${esc(newFrag.title)}</b><br>` : ''}${esc(newFrag.text)}</div>`
           : `<div class="frag"><span class="kind">Không có mảnh mới</span>Bạn đã đập đủ ba lượt với ${esc(d.name)}. Lượt thêm chỉ để lấy điểm, và để nghe lại những lời chưa nghe trọn.</div>`}
@@ -296,7 +308,7 @@
           <button class="btn dark" data-end="A">🥿 Cầm dép lên</button>
           <button class="btn dark" data-end="B">✋ Đặt dép xuống</button>
           ${open ? '<button class="btn gold" data-end="H">🖍️ Cầm bút đỏ, viết tên mình</button>'
-            : `<p class="muted center">🖍️ Cây bút đỏ nằm đó… nhưng bạn chưa hiểu đủ để viết.<br>(cần nghe trọn ${HIDDEN_N}/${TOTAL_W} lời, đã nghe ${heard}${!s.seen.s05 || !s.seen.s06 ? ', vẫn còn vật chứng chưa xem' : ''})</p>`}
+            : `<p class="muted center">🖍️ Cây bút đỏ nằm đó… nhưng bạn chưa hiểu đủ để viết.<br>(cần nghe trọn ${hiddenN()}/${TOTAL_W} lời, đã nghe ${heard}${!s.seen.s05 || !s.seen.s06 ? ', vẫn còn vật chứng chưa xem' : ''})</p>`}
         </div>
       </div>`, 'is-dark');
       on('[data-act=back]', () => go('hub'));
@@ -388,9 +400,12 @@
         <div class="topbar"><button class="icon-btn" data-act="back" aria-label="Quay lại">←</button><h2 class="grow" style="margin:0">Cài đặt</h2></div>
         <div class="card"><label class="row"><span class="grow">Âm thanh</span><input type="checkbox" id="snd" ${s.muted ? '' : 'checked'}></label>
           <label class="row" style="margin-top:8px"><span class="grow">Rung</span><input type="checkbox" id="hap" ${s.haptics ? 'checked' : ''}></label></div>
+        <div class="card"><b>Chế độ chơi</b><p class="muted" style="margin:4px 0 8px">Đổi lúc nào cũng được, áp dụng từ lượt đập tiếp theo. Tiến trình truyện giữ nguyên.</p>${modePicker()}</div>
         ${window.Telemetry && Telemetry.configured ? `<div class="card"><label class="row"><span class="grow">Gửi số liệu chơi ẩn danh</span><input type="checkbox" id="tele" ${s.telemetry === false ? '' : 'checked'}></label>
           <p class="muted" style="margin:6px 0 0">Điểm, số lượt, lời đã nghe… kèm một mã ngẫu nhiên, không có tên hay email, để nhóm làm game cân bằng độ khó.</p></div>` : ''}
         <div class="card"><b>Lưu ý nội dung</b><p class="muted">${esc(UI.contentNote)}</p></div>
+        ${helpHTML()}
+        <div class="card"><b>Hỗ trợ & góp ý</b><p class="muted" style="margin:4px 0 0">Báo lỗi hoặc góp ý tại trang GitHub của game: <span class="sel">github.com/leozuki/dap-tieu-nhan-nghiep-bao/issues</span></p></div>
         <div class="card"><b>Dữ liệu playtest</b><p class="muted">${s.log.length} sự kiện. Gửi đoạn này cho nhóm phát triển sau khi chơi.</p>
           <button class="btn ghost" id="export">Xuất dữ liệu test</button><textarea id="dump" class="dump" readonly style="display:none"></textarea></div>
         ${dbg ? `<div class="card"><b>Debug</b><div class="row wrap" style="margin-top:6px">
@@ -402,6 +417,7 @@
       on('[data-act=back]', () => go(s.seen.s01 ? 'hub' : 'title'));
       $('#snd').onchange = e => { s.muted = !e.target.checked; Sfx.setMuted(s.muted); State.save(); if (!s.muted) { Sfx.unlock(); Sfx.coin(); } };
       $('#hap').onchange = e => { s.haptics = e.target.checked; State.save(); };
+      bindModePicker(() => go('settings'));
       $('#tele') && ($('#tele').onchange = e => { s.telemetry = e.target.checked; State.save(); });
       $('#export').onclick = async () => {
         const txt = JSON.stringify({ app: VERSION, ua: navigator.userAgent, progress: { total: s.total, rounds: s.rounds, heard: State.heardCount(), endings: s.endings }, log: s.log });
@@ -485,6 +501,13 @@
     const ws = (res.heard || []).map(k => { const [, rr, i] = k.split('-').map(Number); return d.whispers[rr] && d.whispers[rr][i]; }).filter(Boolean);
     return ws.length ? `<div class="heard-box"><span class="kind">${esc(d.name)} thì thầm</span>${ws.map(w => `<p>“${esc(w)}”</p>`).join('')}</div>` : '';
   }
+  // đường dây hỗ trợ tâm lý: trong Cài đặt và ở mọi màn kết thúc. Số hiện thành chữ chọn được, kèm liên kết gọi.
+  function helpHTML(compact) {
+    const H = UI.help;
+    return `<div class="${compact ? 'help compact' : 'card help'}"><b>${esc(H.title)}</b>${H.lines.map(l =>
+      `<div class="help-line"><span><b>${esc(l.name)}</b><small>${esc(l.note)}</small></span><a class="help-tel sel" href="tel:${l.tel}">${esc(l.show)}</a></div>`).join('')}
+      ${compact ? '' : `<p class="muted" style="margin:6px 0 0">${esc(H.foot)}</p>`}</div>`;
+  }
   function rulesHTML() {
     return `<details class="rules card"><summary>Luật bản Nghiệp Báo</summary>${HARD.rules.map(([i, t]) => `<p><span>${i}</span>${t}</p>`).join('')}</details>`;
   }
@@ -539,6 +562,7 @@
   function endCard(title) {
     const n = Object.keys(S().endings).length;
     app.querySelector('.screen').insertAdjacentHTML('beforeend', `<div class="end-card"><div class="muted">Kết thúc</div><h2>${esc(title)}</h2><p>Đã mở ${n}/3 kết thúc</p>
+      ${helpHTML(true)}
       <div class="row"><button class="btn ghost grow" id="toJ">📜 Hồ sơ</button><button class="btn grow" id="toH">Về hẻm</button></div></div>`);
     $('#toJ').onclick = () => go('journal');
     $('#toH').onclick = () => go('hub');
@@ -553,6 +577,42 @@
   const MOOD = { title: 'hem', hub: 'hem', sheet: 'hem', altar: 'hem', result: 'hem', items: 'hem', journal: 'hem', settings: 'hem', s07: 'dark', final: 'dark', ending: 'dark', hidden: 'dark' };
   function go(screen, arg) { if (MOOD[screen]) Sfx.music(MOOD[screen]); SCREENS[screen](arg); }
 
-  go(S().seen.s01 ? 'hub' : 'title');
+  // ?shot=<màn>: dựng sẵn một màn với tiến trình mẫu để chụp ảnh cửa hàng (tools/store-shots.sh).
+  // Chỉ chạy khi URL có tham số này; không lưu gì vào máy, không gửi số liệu.
+  const shot = new URLSearchParams(location.search).get('shot');
+  if (shot) setupShot(shot); else go(S().seen.s01 ? 'hub' : 'title');
+  function setupShot(name) {
+    const s = S(); s.telemetry = false; State.save = () => {};
+    document.head.insertAdjacentHTML('beforeend', '<style>#app{max-width:none}</style>'); // ảnh chụp: game giãn hết khung
+    Object.assign(s.seen, { intro: 1, s01: 1, s03: 1, s04: 1 });
+    const tapDoll = (n, gap = 110) => new Promise(done => { let k = 0; const iv = setInterval(() => {
+      const img = document.querySelector('#doll .rdoll-img'), st = document.querySelector('#stage'); if (!img || !st) return;
+      const r = img.getBoundingClientRect(); st.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, clientX: r.left + r.width * (k % 2 ? .4 : .6), clientY: r.top + r.height * .45 }));
+      if (++k >= n) { clearInterval(iv); done(); } }, gap); });
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    ({
+      title() { s.mode = 'thuong'; s.seen = {}; go('title'); },
+      intro() { go('intro', () => {}); const z = () => document.querySelector('#tapzone'); setTimeout(() => { z().click(); setTimeout(() => { z().click(); setTimeout(() => z().click(), 150); }, 150); }, 200); },
+      hub() { s.mode = 'thuong'; s.total = 3; s.rounds = { batam: 1, sep: 1, dongnghiep: 1 }; go('hub'); },
+      async play() {
+        s.mode = 'thuong'; s.total = 1; s.rounds = { batam: 1 };
+        Round.start(byId('batam'), () => {}); await sleep(500);
+        const R = Round.debug(); R.nextDodge = 99; R.wTimes = [R.t + 4.2, 99];
+        await tapDoll(16);
+      },
+      async nghiepbao() {
+        s.mode = 'kho'; s.total = 4; s.rounds = { batam: 1, sep: 2 };
+        Round.start(byId('sep'), () => {}); await sleep(500);
+        const R = Round.debug(); R.nextDodge = 99; R.wTimes = [99, 99]; R.t = 44.5; R.karma = 0;
+        await tapDoll(22, 100); R.nextThrow = R.t + .1;
+        const st = document.querySelector('#stage').getBoundingClientRect();
+        for (let i = 0; i < 9; i++) document.querySelector('#stage').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, clientX: st.left + 24, clientY: st.top + st.height * .55 }));
+      },
+      result() {
+        s.mode = 'thuong'; s.total = 2; s.rounds = { batam: 1 };
+        go('result', { d: byId('batam'), res: { doll: 'batam', n: 2, score: 2640, hits: 186, misses: 9, maxCombo: 41, heard: ['batam-1-0', 'batam-1-1'], cut: 0, taps: 195, reason: 'time', quota: 0, passed: true, mode: 'thuong', karmaMax: 0, swats: 0, struck: 0, t: 60 } });
+      }
+    }[name] || (() => go('title')))();
+  }
   root.DTN = { go, scene, State, Round };
 })(this);

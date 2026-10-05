@@ -12,7 +12,7 @@ find "$OUT" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
 
 W="$SRC/www-hard"
 cp "$W/index.html" "$W/privacy.html" "$OUT/"
-cp -r "$W/css" "$W/js" "$W/admin" "$OUT/"
+cp -r "$W/css" "$W/js" "$W/admin" "$W/fonts" "$OUT/"
 mkdir -p "$OUT/img/v2"
 cp "$W"/img/*.webp "$OUT/img/"
 cp -r "$W/img/play" "$W/img/v3" "$OUT/img/"

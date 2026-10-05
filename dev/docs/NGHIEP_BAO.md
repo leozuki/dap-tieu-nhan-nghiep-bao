@@ -108,6 +108,14 @@ Vấn đề cũ: câu chữ rời rạc, không ai giải thích vì sao hình n
   - Vòng lặp: `sprite-gen video-frames --key green` tách nền; `video-loop` báo không khép vòng (nhân vật không về đúng tư thế đầu), nên dùng `sg_gateway/make_loop.py` lấy đoạn khung 79→137, hòa 8 khung cuối vào đầu → `www-hard/img/v3/batam/clean_idle.webp` (25 khung, 12 fps, 280×420, 769 KB, có chớp mắt).
   - Hạn chế: các tư thế khác của Bà Tư (né, trúng đòn…) vẫn là ảnh cũ độ phân giải thấp, đổi tư thế sẽ thấy chênh độ nét.
 
+### 2.8 Hai chế độ trong một app (chuẩn bị lên store, 2026-10-05)
+- `www-hard/` giờ là mã game duy nhất cho app iOS (`npm run build` → `app-www/`). Người chơi chọn **Bình thường** / **Nghiệp Báo** ở trang đầu hoặc Cài đặt (`State.S.mode`, mặc định Bình thường); đổi lúc nào cũng được, áp dụng từ lượt sau, tiến trình truyện dùng chung.
+- `MODES` trong `round.js`: Bình thường = đúng thông số bản gốc (né 3–4 / 2,2–3 / 1,6–2,4s, báo hiệu 0,4s, combo 0,8s, hệ số x1,5@10…x3@35, vùng đập rộng), **tắt** nghiệp, chỉ tiêu, vật ném, kiểu né thứ hai, cơn giận cuối. Nghiệp Báo giữ nguyên mục 2.1–2.2.
+- Kết thúc ẩn: Bình thường cần 80% lời, Nghiệp Báo 90% (`State.hiddenRatio()`).
+- Truyện có bà thầy, intro, đổi tên, hình nhân "đang thở" dùng chung cho cả hai chế độ.
+- Sự kiện `round_start` / `round_end` gửi kèm `mode`; dashboard chỉ tính lượt Nghiệp Báo (có chỉ tiêu) vào bảng độ khó.
+- Font nhúng offline (`www-hard/fonts/`, OFL), đường dây hỗ trợ tâm lý (Ngày Mai 096 306 1414, 115) trong Cài đặt và mọi màn kết thúc, 3 mức giấy vẽ lại HD (`tools/assets/hd-tiers.sh` + `hd-finish.py`).
+
 ---
 
 ## 3. Cân bằng (mô phỏng, `tools/sim-nghiepbao.js`, 2.000 lượt mỗi ô)

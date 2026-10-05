@@ -255,7 +255,16 @@
     swat: 'GẠT!',
     hurt: 'TRÚNG!',
     quotaOk: 'ĐỦ CHỈ TIÊU!',
-    contentNote: 'Game có chủ đề sức khỏe tinh thần ở phần cuối. Nếu bạn đang thấy nặng lòng, hãy nói chuyện với người bạn tin tưởng.',
+    contentNote: 'Game có chủ đề sức khỏe tinh thần ở phần cuối. Nếu bạn đang thấy nặng lòng, hãy nói chuyện với người bạn tin tưởng, hoặc gọi Đường dây nóng Ngày Mai 096 306 1414.',
+    /* Đường dây hỗ trợ: đã xác minh ngày 05/10/2026 qua befrienders.org và findahelpline.com. Kiểm tra lại trước mỗi lần phát hành. */
+    help: {
+      title: 'Cần người nói chuyện?',
+      lines: [
+        { name: 'Đường dây nóng Ngày Mai', tel: '0963061414', show: '096 306 1414', note: 'Hỗ trợ tâm lý miễn phí · Thứ Tư đến Chủ nhật, 13:00–20:30' },
+        { name: 'Cấp cứu', tel: '115', show: '115', note: 'Khi có nguy hiểm tức thời' }
+      ],
+      foot: 'Bạn không phải một mình. Gọi cho người thân, bạn bè, hoặc một trong các số trên.'
+    },
     stopHint: 'Dừng tay để nghe',
     tiers: ['Đã tay', 'Hả giận', 'Trút sạch'],
     hitWords: ['BỐP!', 'CHÁT!', 'BỘP!', 'PHẠCH!', 'BẸP!'],

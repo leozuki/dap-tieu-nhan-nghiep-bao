@@ -324,7 +324,7 @@ table.list th { color: var(--ink-2); font-weight: 600; font-size: 12px; }
     }
     // mốc sau ngầm hiểu đã qua mốc trước (người chơi cũ có thể thiếu sự kiện mở đầu)
     for (const st of byPlayer.values()) for (let i = STAGES.length - 1; i > 0; i--) if (st.has(STAGES[i][0])) for (let j = 0; j < i; j++) st.add(STAGES[j][0]);
-    const quotaRounds = rounds.filter(r => r.n >= 1 && r.n <= 3);
+    const quotaRounds = rounds.filter(r => r.n >= 1 && r.n <= 3 && r.quota > 0); // chỉ lượt Nghiệp Báo có chỉ tiêu; chế độ Bình thường không tính vào độ khó
     return { players, sessions, byPlayer, rounds, quotaRounds, whispers, ends };
   }
 

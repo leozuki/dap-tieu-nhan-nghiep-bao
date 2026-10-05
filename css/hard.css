@@ -169,3 +169,22 @@
 .pop.warm { font-size: 27px; color: #ffb02e; text-shadow: 2px 2px 0 #7a1d12; }
 .pop.hot { font-size: 32px; color: #ffe08a; text-shadow: 2px 2px 0 #c8261f, 0 0 10px rgba(255, 120, 40, .8); }
 @media (prefers-reduced-motion: reduce) { .hit-ring { animation-duration: .01s; } }
+
+/* chọn chế độ chơi (trang đầu + Cài đặt) */
+.mode-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: min(100%, 360px); margin: 0 auto; }
+.mode-pick button { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 8px 6px; border-radius: 12px;
+  background: var(--cream); color: var(--navy); border: 3px solid var(--navy); opacity: .75; }
+.mode-pick button b { font: 800 17px/1.1 var(--cond); text-transform: uppercase; }
+.mode-pick button small { font-size: 12px; opacity: .8; }
+.mode-pick button[aria-checked="true"] { opacity: 1; background: var(--navy); color: var(--cream); box-shadow: 0 4px 0 var(--navy-d); }
+.mode-pick button[data-mode="kho"][aria-checked="true"] { background: #2a0f0b; border-color: #2a0f0b; color: #ffd23a; box-shadow: 0 4px 0 #000; }
+@media (max-height: 760px) { .mode-pick button { padding: 5px 6px; } .mode-pick button small { display: none; } }
+
+/* đường dây hỗ trợ tâm lý */
+.help { display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.help.compact { margin: 8px 0 10px; padding: 8px 10px; border-radius: 10px; background: rgba(47, 143, 131, .1); border: 1px solid rgba(47, 143, 131, .4); font-size: 14px; }
+.help-line { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.help-line span { display: flex; flex-direction: column; min-width: 0; }
+.help-line small { font-size: 12px; opacity: .75; }
+.help-tel { flex: none; font: 800 18px var(--cond); color: var(--navy); text-decoration: none; background: var(--cream); border: 2px solid var(--navy); border-radius: 8px; padding: 4px 10px; white-space: nowrap; }
+.sel { -webkit-user-select: text; user-select: text; }

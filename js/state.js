@@ -2,12 +2,13 @@
    Bản Nghiệp Báo lưu riêng (khóa khác) để không đè tiến trình bản thường. */
 (function (root) {
   const KEY = 'dtn-nghiepbao-v1';
-  const HIDDEN_RATIO = .9; // bản thường: 80%
+  // kết thúc ẩn cần nghe trọn bao nhiêu lời: Nghiệp Báo 90%, Bình thường 80%
+  const hiddenRatio = () => S.mode === 'kho' ? .9 : .8;
   const LOG_MAX = 3000;
   const fresh = () => ({
     rounds: {}, best: {}, heard: {}, seen: {}, endings: {},
     total: 0, muted: false, haptics: true, playerName: '', sid: 0, log: [],
-    slipper: 'r1c1', tray: 'thuong', names: {}
+    slipper: 'r1c1', tray: 'thuong', names: {}, mode: 'thuong'
   });
   let S;
   try { S = Object.assign(fresh(), JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { S = fresh(); }
@@ -20,13 +21,13 @@
     save();
     root.Telemetry && root.Telemetry.track(ev, data); // gửi ẩn danh nếu đã cấu hình (js/config.js) và người chơi không tắt
   }
-  function reset() { const keep = { muted: S.muted, haptics: S.haptics, log: S.log, sid: S.sid, slipper: S.slipper, tray: S.tray, names: S.names, telemetry: S.telemetry }; S = Object.assign(fresh(), keep); root.State.S = S; save(); applyNames(); }
+  function reset() { const keep = { muted: S.muted, haptics: S.haptics, log: S.log, sid: S.sid, slipper: S.slipper, tray: S.tray, names: S.names, telemetry: S.telemetry, mode: S.mode }; S = Object.assign(fresh(), keep); root.State.S = S; save(); applyNames(); }
 
   const roundsOf = id => S.rounds[id] || 0;
   const heardKey = (id, r, i) => `${id}-${r}-${i}`;
   const heardCount = () => Object.keys(S.heard).length;
   const storyDone = () => STORY.DOLLS.every(d => roundsOf(d.id) >= 3);
-  const hiddenOpen = () => heardCount() >= Math.ceil(STORY.DOLLS.reduce((n, d) => n + d.whispers.flat().length, 0) * HIDDEN_RATIO) && S.seen.s05 && S.seen.s06;
+  const hiddenOpen = () => heardCount() >= Math.ceil(STORY.DOLLS.reduce((n, d) => n + d.whispers.flat().length, 0) * hiddenRatio()) && S.seen.s05 && S.seen.s06;
 
   /* Tên tự đặt cho hình nhân: chỉ lưu trên máy, không ghi vào nhật ký playtest.
      Thay tên gốc trong thẻ tên, lời khấn, lời kể, mảnh ký ức và kết cục; giữ bản gốc để đổi lại được. */
@@ -61,6 +62,6 @@
   }
 
   S.sid = (S.sid || 0) + 1; save();
-  root.State = { S, save, log, reset, roundsOf, heardKey, heardCount, storyDone, hiddenOpen, buzz, HIDDEN_RATIO, setName, applyNames, NAME_MAX };
+  root.State = { S, save, log, reset, roundsOf, heardKey, heardCount, storyDone, hiddenOpen, buzz, hiddenRatio, setName, applyNames, NAME_MAX };
   root.Telemetry && root.Telemetry.track('session_start');
 })(this);

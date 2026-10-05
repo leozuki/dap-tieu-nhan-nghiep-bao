@@ -4,18 +4,21 @@
    - Gom thành lô (10 giây hoặc 20 sự kiện), gửi bù lần sau nếu mất mạng (giữ tối đa 500 sự kiện). */
 (function (root) {
   const CFG = root.DTN_TELEMETRY || {};
-  const ON = !!(CFG.url && CFG.anonKey);
+  // không gửi khi chạy thử trên máy (localhost) hay khi chụp ảnh cửa hàng (?shot=), trừ khi thêm ?telemetry=1
+  // (app iOS chạy ở capacitor://localhost nên chỉ coi là "chạy thử" khi giao thức là http/https)
+  const LOCAL = (/^https?:$/.test(location.protocol) && /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) || /[?&]shot=/.test(location.search);
+  const ON = !!(CFG.url && CFG.anonKey) && (!LOCAL || /[?&]telemetry=1/.test(location.search));
   const APP = 'nghiepbao-0.3';
   const QKEY = 'dtn-telemetry-queue', PKEY = 'dtn-player-id';
   const MAX_Q = 500, BATCH = 20, EVERY = 10000;
   // sự kiện gửi lên và các trường được phép (lọc theo danh sách trắng để không lọt dữ liệu lạ)
   const ALLOW = {
-    session_start: [],
+    session_start: [],   // chú ý: tên sự kiện mới phải thêm vào policy trong tools/admin/supabase.sql, nếu không cả lô bị từ chối
     scene: ['id'],
     intro_skip: ['at'],
     npc: ['id', 'choice'],
-    round_start: ['doll', 'n'],
-    round_end: ['doll', 'n', 'score', 'hits', 'misses', 'maxCombo', 'cut', 'taps', 'reason', 'quota', 'passed', 'karmaMax', 'swats', 'struck', 't', 'heardN'],
+    round_start: ['doll', 'n', 'mode'],
+    round_end: ['mode', 'doll', 'n', 'score', 'hits', 'misses', 'maxCombo', 'cut', 'taps', 'reason', 'quota', 'passed', 'karmaMax', 'swats', 'struck', 't', 'heardN'],
     whisper: ['doll', 'key', 'res', 't', 'stopBtn'],
     quit_round: ['doll', 't'],
     ending: ['id'],

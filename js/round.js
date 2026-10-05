@@ -6,9 +6,8 @@
 (function (root) {
   const $ = (s, el = document) => el.querySelector(s);
   const ROUND_TIME = 60;
-  const COMBO_GAP = .6; // bản thường .8; đồng hồ combo dừng lại khi hình nhân đang né (kiên nhẫn chờ thì giữ được combo)
   const X_MIN = 100, X_MAX = 300; // vị trí hình nhân theo đơn vị 0–400 bề ngang sân
-  const DIFF = [ // theo số lượt đã chơi với con đó (bản thường: gap 3–4 / 2,2–3 / 1,6–2,4; tele .4; không ném)
+  const DIFF = [ // Nghiệp Báo, theo số lượt đã chơi với con đó
     { gap: [2, 2.8], fake: .15, hold: 1.1, tele: .32, mix: 0, chain: 0, throwGap: null, fly: 0 },
     { gap: [1.4, 2.1], fake: .25, hold: 1.2, tele: .27, mix: .35, chain: .15, throwGap: [7, 10], fly: 1.35 },
     { gap: [1, 1.6], fake: .35, hold: 1.3, tele: .22, mix: .45, chain: .3, throwGap: [4.5, 7], fly: 1.1 }
@@ -18,7 +17,23 @@
   const RAGE_AT = 10, RAGE_GAP = .7, RAGE_PTS = 2; // 10 giây cuối
   const rnd = (a, b) => a + Math.random() * (b - a);
   const pick = a => a[Math.floor(Math.random() * a.length)];
-  const mult = c => c >= 50 ? 4 : c >= 30 ? 3 : c >= 15 ? 2 : c >= 6 ? 1.5 : 1;
+  const multHard = c => c >= 50 ? 4 : c >= 30 ? 3 : c >= 15 ? 2 : c >= 6 ? 1.5 : 1;
+  const multNormal = c => c >= 35 ? 3 : c >= 20 ? 2 : c >= 10 ? 1.5 : 1;
+  /* Hai chế độ chơi. 'thuong' = độ khó của bản gốc: né thưa, báo hiệu dài, vùng đập rộng, không nghiệp, không chỉ tiêu,
+     không vật ném, không cơn giận cuối. 'kho' = Nghiệp Báo. Chọn ở trang đầu hoặc Cài đặt (State.S.mode). */
+  const MODES = {
+    thuong: {
+      diff: [
+        { gap: [3, 4], fake: 0, hold: 1, tele: .4, mix: 0, chain: 0, throwGap: null, fly: 0 },
+        { gap: [2.2, 3], fake: .1, hold: 1.1, tele: .4, mix: 0, chain: 0, throwGap: null, fly: 0 },
+        { gap: [1.6, 2.4], fake: .25, hold: 1.2, tele: .4, mix: 0, chain: 0, throwGap: null, fly: 0 }
+      ],
+      comboGap: .8, mult: multNormal, hit: { sx: .14, sy: .04, pad: 10 }, karma: false, quota: false, rage: false
+    },
+    kho: { diff: DIFF, comboGap: .6, mult: multHard, hit: { sx: .2, sy: .08, pad: 2 }, karma: true, quota: true, rage: true }
+  };
+  const modeOf = () => State.S.mode === 'kho' ? 'kho' : 'thuong';
+  let mult = multHard; // gán theo chế độ khi bắt đầu lượt
   const HARD = STORY.HARD;
   const quotaOf = r => r < 3 ? HARD.quota[r] : 0;
   const weaponOf = () => STORY.ITEMS.weapons.find(x => x.id === State.S.slipper) || STORY.ITEMS.weapons[0];
@@ -53,14 +68,16 @@
   function start(d, onEnd) {
     preload(d);
     const r = State.roundsOf(d.id);
-    const diff = DIFF[Math.min(r, 2)];
+    const mode = modeOf(), cfg = MODES[mode];
+    mult = cfg.mult;
+    const diff = cfg.diff[Math.min(r, 2)];
     R = {
       d, r, diff, onEnd, t: 0, last: performance.now(), raf: 0, over: false, paused: false,
       score: 0, hits: 0, misses: 0, combo: 0, maxCombo: 0, lastHit: -9, taps: 0,
       x: 200, tx: 200, face: 1, op: 1, state: 'idle', stateEnd: 0, nextDodge: rnd(1.5, 2.5), pose: '', poseLock: 0, runI: 0,
       plan: whisperPlan(d, r), wTimes: [rnd(14, 22), rnd(34, 44)], wIdx: 0, w: null,
       heard: [], cut: 0, lastTaunt: 0, nextBeat: 0, slow: 1,
-      hd: HARD.dolls[d.id] || {}, quota: quotaOf(r), quotaHit: false, comboClock: 9,
+      mode, cfg, hd: HARD.dolls[d.id] || {}, quota: cfg.quota ? quotaOf(r) : 0, quotaHit: false, comboClock: 9,
       karma: 0, karmaMax: 0, rage: false, projs: [], swats: 0, struck: 0,
       nextThrow: diff.throwGap ? rnd(3.5, 5) : Infinity,
       freeze: 0, kick: 0, kickY: 0, kickR: 0
@@ -70,7 +87,7 @@
     say(pick(d.taunts), 1.4);
     banner(State.S.total === 0 ? 'CHẠM VÀO HÌNH NHÂN ĐỂ ĐẬP!' : R.quota ? `CHỈ TIÊU ${R.quota.toLocaleString('vi-VN')}` : 'ĐẬP!');
     Sfx.gong(); Sfx.music('round');
-    State.log('round_start', { doll: d.id, n: r + 1 });
+    State.log('round_start', { doll: d.id, n: r + 1, mode });
     R.raf = requestAnimationFrame(loop);
     R.iv = setInterval(tick, 100);
   }
@@ -96,7 +113,7 @@
           <div class="p-plaque p-combo" id="comboBox" style="background-image:url(${P('plaque_combo')})"><span class="combo" id="combo">COMBO × 0</span></div></div>
         <div class="hud-mid"><div class="p-plaque p-time" style="background-image:url(${P('plaque_time')})"><span class="timer-txt" id="timeTxt">01:00</span></div>
           <div class="bar time"><i id="timeBar"></i></div><b class="hud-name">${d.name}</b>
-          <div class="karma" id="karma"><i id="karmaBar"></i><span>NGHIỆP</span></div>
+          ${R.cfg.karma ? '<div class="karma" id="karma"><i id="karmaBar"></i><span>NGHIỆP</span></div>' : ''}
           ${R.quota ? `<div class="quota" id="quota">🎯 ${R.quota.toLocaleString('vi-VN')}</div>` : ''}</div>
         <button class="p-pause" id="pauseBtn" aria-label="Tạm dừng">${pi('btn_pause', '')}</button>
       </div>
@@ -140,7 +157,7 @@
   const basePose = () => R.hits >= 60 ? 'hurt' : 'base';
   const dollRect = () => {
     const r = $('#doll .rdoll-img')?.getBoundingClientRect(); if (!r) return null;
-    const sx = r.width * .2, sy = r.height * .08; // ảnh có viền hiệu ứng, thu hẹp vùng đập (bản thường .14 / .04)
+    const sx = r.width * R.cfg.hit.sx, sy = r.height * R.cfg.hit.sy; // ảnh có viền hiệu ứng, thu hẹp vùng đập theo chế độ
     return { left: r.left + sx, right: r.right - sx, top: r.top + sy, bottom: r.bottom, width: r.width - 2 * sx, height: r.height - sy };
   };
 
@@ -164,14 +181,14 @@
     $('#timeBar').parentElement.classList.toggle('low', left < 10);
     // đồng hồ combo chỉ chạy khi hình nhân đập được: chờ nó né xong thì vẫn giữ combo, đập vào khoảng trống mới mất
     if (R.state === 'idle' || R.state === 'tele') R.comboClock += dt;
-    if (R.combo && R.comboClock > COMBO_GAP) { R.combo = 0; paintCombo(); }
+    if (R.combo && R.comboClock > R.cfg.comboGap) { R.combo = 0; paintCombo(); }
 
     // nghiệp tự vơi dần
     if (R.karma > 0) addKarma(-KARMA.decay * dt);
     if (R.over) return;
 
     // cơn giận cuối
-    if (!R.rage && left <= RAGE_AT) {
+    if (R.cfg.rage && !R.rage && left <= RAGE_AT) {
       R.rage = true; $('#stage').classList.add('rage');
       banner(STORY.UI.rage, 1500); Sfx.crit(); State.buzz('medium');
       if (R.state === 'idle') R.nextDodge = Math.min(R.nextDodge, t + .5);
@@ -288,6 +305,7 @@
   }
   function stepWhisper(dt) {
     const w = R.w; if (w.done) return;
+    placeBubble(); // bám theo hình nhân (đổi tư thế, bị hất, lơ lửng) để bong bóng không che mặt
     w.el = (w.el || 0) + dt;
     const n = Math.min(w.text.length, Math.ceil(w.text.length * w.el / w.dur));
     if (n !== w.shown) { w.shown = n; $('#bubble .w-txt').textContent = w.text.slice(0, n); }
@@ -304,7 +322,7 @@
       State.S.heard[key] = 1; R.heard.push(key);
       b.classList.add('heard');
       $('#bubble .w-txt').textContent = w.text;
-      b.insertAdjacentHTML('beforeend', '<span class="w-ok">✓ đã nghe · nghiệp vơi</span>');
+      b.insertAdjacentHTML('beforeend', `<span class="w-ok">✓ đã nghe${R.cfg.karma ? ' · nghiệp vơi' : ''}</span>`);
       State.buzz('medium');
       addKarma(KARMA.heard);
     } else {
@@ -362,7 +380,7 @@
     if (R.over) return;
     if (swat(px, py)) return;
 
-    const hit = dollRect(), pad = 2;
+    const hit = dollRect(), pad = R.cfg.hit.pad;
     const inside = hit && e.clientX >= hit.left - pad && e.clientX <= hit.right + pad && e.clientY >= hit.top - pad && e.clientY <= hit.bottom + pad;
     const hidden = R.state === 'duck' || R.state === 'fade';
     if (!inside || hidden) return miss(px, py);
@@ -374,7 +392,7 @@
     }
     // trúng
     const t = R.t;
-    R.combo = R.comboClock <= COMBO_GAP ? R.combo + 1 : 1;
+    R.combo = R.comboClock <= R.cfg.comboGap ? R.combo + 1 : 1;
     R.comboClock = 0;
     R.lastHit = t; R.hits++; R.maxCombo = Math.max(R.maxCombo, R.combo);
     if (R.hits === 6) $('#finger')?.remove();
@@ -418,7 +436,7 @@
 
   /* ---------- NGHIỆP ---------- */
   function addKarma(v) {
-    if (!R || R.over) return;
+    if (!R || R.over || !R.cfg.karma) return;
     R.karma = Math.max(0, Math.min(100, R.karma + v));
     R.karmaMax = Math.max(R.karmaMax, R.karma);
     const bar = $('#karmaBar'), box = $('#karma');
@@ -603,7 +621,7 @@
     if (burst) say(pick(R.d.taunts), 2);
     const passed = !burst && R.score >= R.quota;
     const res = { doll: R.d.id, n: R.r + 1, score: R.score, hits: R.hits, misses: R.misses, maxCombo: R.maxCombo, heard: R.heard.slice(), cut: R.cut, taps: R.taps,
-      reason, quota: R.quota, passed, karmaMax: Math.round(R.karmaMax), swats: R.swats, struck: R.struck, t: +R.t.toFixed(1) };
+      reason, quota: R.quota, passed, mode: R.mode, karmaMax: Math.round(R.karmaMax), swats: R.swats, struck: R.struck, t: +R.t.toFixed(1) };
     State.log('round_end', res);
     const cb = R.onEnd;
     setTimeout(() => { cleanup(); cb(res); }, burst ? 1800 : 1300);
