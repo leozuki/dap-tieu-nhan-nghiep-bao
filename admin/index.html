@@ -152,8 +152,21 @@ table.list th { color: var(--ink-2); font-weight: 600; font-size: 12px; }
       <p class="err" id="loginErr" role="alert"></p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn primary" type="submit" id="loginBtn">Đăng nhập</button>
+        <button class="btn" type="button" id="forgotBtn">Quên mật khẩu</button>
         <button class="btn" type="button" id="demoBtn">Xem dữ liệu mẫu</button>
       </div>
+    </form>
+  </section>
+
+  <!-- mở từ link mời / đặt lại mật khẩu trong email của Supabase -->
+  <section class="card login" id="pwBox" hidden>
+    <h2>Đặt mật khẩu admin</h2>
+    <p class="sub">Bạn mở trang này từ email của Supabase. Đặt mật khẩu để đăng nhập dashboard lần sau.</p>
+    <form id="pwForm">
+      <label>Mật khẩu mới (ít nhất 8 ký tự) <input id="pw1" type="password" autocomplete="new-password" minlength="8" required></label>
+      <label style="margin-top:8px">Nhập lại <input id="pw2" type="password" autocomplete="new-password" minlength="8" required></label>
+      <p class="err" id="pwErr" role="alert"></p>
+      <button class="btn primary" type="submit" id="pwBtn">Lưu mật khẩu</button>
     </form>
   </section>
 
@@ -492,6 +505,31 @@ table.list th { color: var(--ink-2); font-weight: 600; font-size: 12px; }
     $('#loginBtn').disabled = false;
   });
   $('#demoBtn').addEventListener('click', () => showDash('demo'));
+  // quên mật khẩu: Supabase gửi email có link quay về đúng trang này
+  $('#forgotBtn').addEventListener('click', async () => {
+    const email = $('#email').value.trim();
+    if (!email) { $('#loginErr').textContent = 'Nhập email trước rồi bấm Quên mật khẩu.'; return; }
+    const r = await fetch(BASE + '/auth/v1/recover?redirect_to=' + encodeURIComponent(location.origin + location.pathname), { method: 'POST', headers: { apikey: CFG.anonKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) }).catch(() => null);
+    $('#loginErr').textContent = r && r.ok ? 'Nếu email này là admin, thư đặt lại mật khẩu đã được gửi. Mở thư trên máy này.' : 'Không gửi được, thử lại sau ít phút.';
+  });
+  // link mời / đặt lại mật khẩu: #access_token=...&type=invite|recovery
+  const hash = new URLSearchParams(location.hash.slice(1));
+  if (hash.get('access_token') && /^(invite|recovery|signup|magiclink)$/.test(hash.get('type') || '')) {
+    store.set('dtn-admin-token', hash.get('access_token'));
+    history.replaceState(null, '', location.pathname); // xóa token khỏi thanh địa chỉ
+    $('#loginBox').hidden = true; $('#pwBox').hidden = false;
+    $('#pwForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const a = $('#pw1').value, b = $('#pw2').value;
+      if (a !== b) { $('#pwErr').textContent = 'Hai mật khẩu không khớp.'; return; }
+      $('#pwBtn').disabled = true;
+      const r = await fetch(BASE + '/auth/v1/user', { method: 'PUT', headers: { apikey: CFG.anonKey, Authorization: 'Bearer ' + store.get('dtn-admin-token'), 'Content-Type': 'application/json' }, body: JSON.stringify({ password: a }) }).catch(() => null);
+      $('#pwBtn').disabled = false;
+      if (!r || !r.ok) { const j = r ? await r.json().catch(() => ({})) : {}; $('#pwErr').textContent = j.msg || j.error_description || 'Không lưu được. Link có thể đã hết hạn, hãy bấm Quên mật khẩu để nhận link mới.'; return; }
+      $('#pw1').value = $('#pw2').value = '';
+      $('#pwBox').hidden = true; showDash('live');
+    });
+  }
   $('#logout').addEventListener('click', () => { store.set('dtn-admin-token', null); showLogin('Đã đăng xuất.'); });
   $('#refresh').addEventListener('click', load);
   $('#ver').addEventListener('change', e => { ver = e.target.value; render(); });
@@ -500,7 +538,8 @@ table.list th { color: var(--ink-2); font-weight: 600; font-size: 12px; }
     range = +b.dataset.r; $('#range').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); render();
   });
 
-  if (/[?&]demo\b/.test(location.search)) showDash('demo');
+  if (!$('#pwBox').hidden) { /* đang đặt mật khẩu từ link trong email */ }
+  else if (/[?&]demo\b/.test(location.search)) showDash('demo');
   else if (BASE && store.get('dtn-admin-token')) showDash('live');
   else showLogin();
 })();

@@ -17,6 +17,17 @@ Bạn (trình duyệt) ──đăng nhập──▶ /admin/ ◀─────�
 
 **Vì sao không dùng link claude.ai:** trang trên claude.ai chặn gửi dữ liệu ra máy chủ khác, và kho dữ liệu riêng của artifact không cho khách ngoài tổ chức ghi. Link claude.ai vẫn chơi được bình thường nhưng **không gửi số liệu**.
 
+## Đang chạy (dựng ngày 2026-10-05)
+| | |
+|---|---|
+| Game | https://leozuki.github.io/dap-tieu-nhan-nghiep-bao/ |
+| Dashboard | https://leozuki.github.io/dap-tieu-nhan-nghiep-bao/admin/ |
+| Repo (công khai) | https://github.com/leozuki/dap-tieu-nhan-nghiep-bao (dựng bằng `bash tools/build-site.sh`) |
+| Supabase | dự án `dap-tieu-nhan-nghiep-bao` (`xmziwcbuazvccpoesmzi`), tổ chức leozuki's Org, gói Free |
+| Admin | son.nguyen.gh@gmail.com (đặt mật khẩu qua link mời trong email; quên thì bấm *Quên mật khẩu* trên dashboard) |
+
+Cập nhật game: sửa trong `www-hard/` → `bash tools/build-site.sh` → `cd ../dap-tieu-nhan-nghiep-bao && git add -A && git commit -m "..." && git push`. GitHub Pages tự dựng lại sau ~1 phút.
+
 ---
 
 ## Cài đặt (khoảng 15 phút, miễn phí)
